@@ -20,8 +20,8 @@ st.markdown("""
                .block-container {
                     padding-top: 0rem;
                     padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
+                    padding-left: 6vw;
+                    padding-right: 6vw;
                 }
         </style>
         """, unsafe_allow_html=True)
@@ -122,7 +122,7 @@ if uploaded_file:
         col1, col2, col3 = st.columns(3)
         col1.metric("Users that meet the criteria", len(unfollowers))
         col2.metric("Total Followers", len(followers_list))   
-        col3.metric("Total Following", len(following_list))
+        col3.metric("TotalF ollowing", len(following_list))
         
         search_term = st.text_input("Search for a specific user", "")
         st.markdown("<br/>", unsafe_allow_html=True)
@@ -132,5 +132,5 @@ if uploaded_file:
             
         for unfollower in filtered_search:
             st.markdown(f"👻  &nbsp; [{unfollower}](https://www.instagram.com/{unfollower})")
-            
-        st.markdown("<br/><br/><br/>", unsafe_allow_html=True)
+
+st.markdown("<br/><br/><br/>", unsafe_allow_html=True)
