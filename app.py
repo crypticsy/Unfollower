@@ -2,12 +2,13 @@
 
 import streamlit as st
 import zipfile
+import json
 
 from bs4 import BeautifulSoup as bs
 
 
 st.set_page_config(
-    page_title="Unfollower",
+    page_title="Instagram Unfollower",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -15,32 +16,41 @@ st.set_page_config(
 
 divider_color = "red"
 
+# ----------------------------------------------- Main Page -----------------------------------------------
+
+st.markdown("<br/><br/>", unsafe_allow_html=True)
+st.subheader("Upload Your Meta Data", divider=divider_color)
+
 # Steps inside a toggle
 with st.expander("How to Download Instagram Follower and Following Data From Meta", icon="🤔"):
     st.divider()
     st.write("Follow the steps below to download your Instagram follower and following data from Meta.")
     
     steps = [
-        "Log in to your Instagram account on the app or [website](https://www.instagram.com/).",
-        "Go to your profile and tap the **Menu** (three horizontal lines) in the top-right corner.",
-        "Select **Settings and Privacy**, then scroll down and click **Meta Account Center**.",
-        "In the Account Center, find the **Privacy** section and select **Your Information and Permissions**.",
-        "Click on **Download Your Information**.",
-        "Choose the Instagram account, check **Followers and Following Data**, and select your preferred format as HTML.",
-        "Click **Request a Download**. Meta will process your request and send a link to your email.",
-        "Check your email for a link from Meta, and log in to your account to verify and download the file.",
-        "Upload the downloaded ZIP file to view your data."
+        "Log in to your Instagram account on the [Instagram website](https://www.instagram.com/) or the mobile app.",
+        "Go to your profile and tap the **Menu** icon (three lines) in the top-right corner.",
+        "Select **Settings and Privacy** and scroll down to click **Meta Account Center**.",
+        "In the Account Center, go to **Privacy** and click **Your Information and Permissions**.",
+        "Choose **Download Your Information**, then select **Some of your information**.",
+        "Scroll down, check **Followers and Following**, and click **Next**.",
+        "Select **Download to device**, choose **All time** for the date range.",
+        "Click **Request a Download**. Wait for an email from Meta with your download link.",
+        "Open the email, click the link, and log in to confirm your request.",
+        "Download the ZIP file, and upload it to this webpage."
     ]
 
     for i, step in enumerate(steps, start=1):
         st.markdown(f"**Step {i}:** {step}")
 
+st.markdown("<br/>", unsafe_allow_html=True)
 
-st.markdown("<br/><br/>", unsafe_allow_html=True)
-st.subheader("Upload Your Meta Data", divider=divider_color)
+# Data format
+save_type = st.radio("Data Format", ["HTML", "JSON"], index=0, horizontal=True)
+
+st.markdown("<br/>", unsafe_allow_html=True)
 
 # File uploader
-uploaded_file = st.file_uploader("", type=["zip"])
+uploaded_file = st.file_uploader("Upload your zip file here", type=["zip"])
 
 if uploaded_file:
     # Notify the user
@@ -48,33 +58,49 @@ if uploaded_file:
     
     followers = ""
     following = ""
+    unfollowers = []
 
     # Open the ZIP file in memory
     with zipfile.ZipFile(uploaded_file, "r") as zip_ref:    
-        for file_name in zip_ref.namelist():
-            # ensure the file is an HTML file
-            if not file_name.endswith(".html"):
-                continue
+        for file_name in zip_ref.namelist():            
+            if save_type == "HTML" and file_name.endswith(".html"):
+              if "followers" in file_name.split("/")[-1]:
+                  with zip_ref.open(file_name) as file:
+                      followers = bs(file.read(), "html.parser")
+                  
+              elif "following" in file_name.split("/")[-1]:
+                  with zip_ref.open(file_name) as file:
+                      following = bs(file.read(), "html.parser")
             
-            if "followers" in file_name.split("/")[-1]:
-                with zip_ref.open(file_name) as file:
-                    followers = bs(file.read(), "html.parser")
-                    
-            elif "following" in file_name.split("/")[-1]:
-                with zip_ref.open(file_name) as file:
-                    following = bs(file.read(), "html.parser")
-    
-    if followers and following:
+            elif save_type == "JSON" and file_name.endswith(".json"):
+              if "followers" in file_name.split("/")[-1]:
+                  with zip_ref.open(file_name) as file:
+                      followers = json.load(file)
+              
+              elif "following" in file_name.split("/")[-1]:
+                  with zip_ref.open(file_name) as file:
+                      following = json.load(file)
+
+    if followers and following and save_type == "HTML":
         st.success("Data successfully extracted!")
         
-        st.markdown("<br/><br/>", unsafe_allow_html=True)
-        st.subheader("Following that don't follow you back", divider=divider_color)
         followers_list = [follower.text for follower in followers.find_all("a", {"target": "_blank"})] 
-        following_list = [following.text for following in following.find_all("a", {"target": "_blank"})]
-        
+        following_list = [followin.text for followin in following.find_all("a", {"target": "_blank"})]
         unfollowers = [following for following in following_list if following not in followers_list]
+    
+    elif followers and following and save_type == "JSON":
+        st.success("Data successfully extracted!")
         
-        for unfollower in unfollowers:
-            st.markdown(f"👻 [{unfollower}](https://www.instagram.com/{unfollower})")
+        followers_list = [follower["string_list_data"][0]["value"] for follower in followers]
+        following_list = [followin["string_list_data"][0]["value"] for followin in following["relationships_following"]]
+        unfollowers = [following for following in following_list if following not in followers_list]
+    
+    if unfollowers:
+      st.markdown("<br/><br/>", unsafe_allow_html=True)
+      st.subheader("Users that you follow but don't follow you back", divider=divider_color)
+      st.markdown("")
+      
+      for unfollower in unfollowers:
+          st.markdown(f"👻 [{unfollower}](https://www.instagram.com/{unfollower})")
 
 
