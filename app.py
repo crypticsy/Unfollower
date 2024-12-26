@@ -14,12 +14,31 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Remove whitespace from the top of the page and sidebar
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 0rem;
+                    padding-bottom: 0rem;
+                    padding-left: 5rem;
+                    padding-right: 5rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
+
 divider_color = "red"
 
 # ----------------------------------------------- Main Page -----------------------------------------------
 
 st.markdown("<br/><br/>", unsafe_allow_html=True)
-st.subheader("Upload Your Meta Data", divider=divider_color)
+st.subheader("Instagram Unfollower", divider=divider_color)
+st.markdown("""
+<p style="font-size: 13px; font-weight: 400;">
+    A simple tool to help you identify the people on Instagram who don't follow you back! <br/>
+    It is designed to help you manage your Instagram following list, 
+    clearing out the accounts that don’t reciprocate your follow and letting you focus on people who genuinely care about your content. 💖
+</p>
+""", unsafe_allow_html=True)
 
 # Steps inside a toggle
 with st.expander("How to Download Instagram Follower and Following Data From Meta", icon="🤔"):
@@ -53,33 +72,31 @@ st.markdown("<br/>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Upload your zip file here", type=["zip"])
 
 if uploaded_file:
-    # Notify the user
-    st.info("Processing the uploaded ZIP file...")
-    
-    followers = ""
-    following = ""
-    unfollowers = []
+    with st.spinner("Processing the uploaded ZIP file..."):
+        followers = ""
+        following = ""
+        unfollowers = []
 
-    # Open the ZIP file in memory
-    with zipfile.ZipFile(uploaded_file, "r") as zip_ref:    
-        for file_name in zip_ref.namelist():            
-            if save_type == "HTML" and file_name.endswith(".html"):
-              if "followers" in file_name.split("/")[-1]:
-                  with zip_ref.open(file_name) as file:
-                      followers = bs(file.read(), "html.parser")
-                  
-              elif "following" in file_name.split("/")[-1]:
-                  with zip_ref.open(file_name) as file:
-                      following = bs(file.read(), "html.parser")
-            
-            elif save_type == "JSON" and file_name.endswith(".json"):
-              if "followers" in file_name.split("/")[-1]:
-                  with zip_ref.open(file_name) as file:
-                      followers = json.load(file)
-              
-              elif "following" in file_name.split("/")[-1]:
-                  with zip_ref.open(file_name) as file:
-                      following = json.load(file)
+        # Open the ZIP file in memory
+        with zipfile.ZipFile(uploaded_file, "r") as zip_ref:    
+            for file_name in zip_ref.namelist():            
+                if save_type == "HTML" and file_name.endswith(".html"):
+                    if "followers" in file_name.split("/")[-1]:
+                        with zip_ref.open(file_name) as file:
+                            followers = bs(file.read(), "html.parser")
+                        
+                    elif "following" in file_name.split("/")[-1]:
+                        with zip_ref.open(file_name) as file:
+                            following = bs(file.read(), "html.parser")
+                
+                elif save_type == "JSON" and file_name.endswith(".json"):
+                    if "followers" in file_name.split("/")[-1]:
+                        with zip_ref.open(file_name) as file:
+                            followers = json.load(file)
+                    
+                    elif "following" in file_name.split("/")[-1]:
+                        with zip_ref.open(file_name) as file:
+                            following = json.load(file)
 
     if followers and following and save_type == "HTML":
         st.success("Data successfully extracted!")
@@ -99,11 +116,21 @@ if uploaded_file:
         st.error("Please ensure you have uploaded the correct ZIP file and selected the correct data format.")
     
     if unfollowers:
-      st.markdown("<br/><br/>", unsafe_allow_html=True)
-      st.subheader("Users that you follow but don't follow you back", divider=divider_color)
-      st.markdown("")
+        st.markdown("<br/><br/>", unsafe_allow_html=True)
+        st.subheader("Users that you follow but don't follow you back", divider=divider_color)
       
-      for unfollower in unfollowers:
-          st.markdown(f"👻 [{unfollower}](https://www.instagram.com/{unfollower})")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Users that meet the criteria", len(unfollowers))
+        col2.metric("Total Followers", len(followers_list))   
+        col3.metric("Total Following", len(following_list))
+        
+        search_term = st.text_input("Search for a specific user", "")
+        st.markdown("<br/>", unsafe_allow_html=True)
 
-
+        filtered_search = unfollowers
+        if search_term: filtered_search = [user for user in unfollowers if search_term.lower() in user.lower()]
+            
+        for unfollower in filtered_search:
+            st.markdown(f"👻  &nbsp; [{unfollower}](https://www.instagram.com/{unfollower})")
+            
+        st.markdown("<br/><br/><br/>", unsafe_allow_html=True)
