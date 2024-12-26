@@ -2,7 +2,8 @@
 
 A simple **Streamlit app** to help you identify the people on Instagram who don't follow you back! This project is designed to help you manage your Instagram following list, clearing out the accounts that don’t reciprocate your follow and letting you focus on people who genuinely care about your content. 💖
 
----
+<br/>
+
 
 ## 🚀 Features
 - **Upload Instagram data**: Upload the ZIP file you downloaded from Instagram's Account Center.
@@ -10,7 +11,7 @@ A simple **Streamlit app** to help you identify the people on Instagram who don'
 - **Interactive and user-friendly**: See your results with a clean and intuitive interface.
 - **Privacy first**: All processing happens locally—your data is safe!
 
----
+<br/>
 
 ## 🛠 How It Works
 1. **Download your Instagram data**:
@@ -30,7 +31,7 @@ A simple **Streamlit app** to help you identify the people on Instagram who don'
 4. **Take action**:
    - Use the results to manage your following list directly in the Instagram app.
 
----
+<br/>
 
 ## 📋 Requirements
 To run this project, you need:
