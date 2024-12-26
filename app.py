@@ -95,6 +95,9 @@ if uploaded_file:
         following_list = [followin["string_list_data"][0]["value"] for followin in following["relationships_following"]]
         unfollowers = [following for following in following_list if following not in followers_list]
     
+    else:
+        st.error("Please ensure you have uploaded the correct ZIP file and selected the correct data format.")
+    
     if unfollowers:
       st.markdown("<br/><br/>", unsafe_allow_html=True)
       st.subheader("Users that you follow but don't follow you back", divider=divider_color)
