@@ -81,20 +81,20 @@ if uploaded_file:
         with zipfile.ZipFile(uploaded_file, "r") as zip_ref:    
             for file_name in zip_ref.namelist():            
                 if save_type == "HTML" and file_name.endswith(".html"):
-                    if "followers" in file_name.split("/")[-1]:
+                    if "followers_1.html" in file_name.split("/")[-1]:
                         with zip_ref.open(file_name) as file:
                             followers = bs(file.read(), "html.parser")
                         
-                    elif "following" in file_name.split("/")[-1]:
+                    elif "following.html" in file_name.split("/")[-1]:
                         with zip_ref.open(file_name) as file:
                             following = bs(file.read(), "html.parser")
                 
                 elif save_type == "JSON" and file_name.endswith(".json"):
-                    if "followers" in file_name.split("/")[-1]:
+                    if "followers_1.json" in file_name.split("/")[-1]:
                         with zip_ref.open(file_name) as file:
                             followers = json.load(file)
                     
-                    elif "following" in file_name.split("/")[-1]:
+                    elif "following.json" in file_name.split("/")[-1]:
                         with zip_ref.open(file_name) as file:
                             following = json.load(file)
 
