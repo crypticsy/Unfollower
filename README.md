@@ -20,8 +20,7 @@ For now the app only supports Instagram and GitHub, but I plan to add more socia
    - You'll receive an email from Instagram with a ZIP file link—download it.
 
 2. **Upload your data to the app**:
-   - Extract the ZIP file.
-   - Upload the files containing **followers** and **following** information into the app.
+   - Upload the zip file previously downloaded into the app.
 
 3. **View the results**:
    - The app will compare your **following** list to your **followers** list.
