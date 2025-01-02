@@ -1,19 +1,18 @@
-# Instagram Unfollower 🙅‍♂️📉
+# Unfollower 🙅‍♂️📉
 
-A simple **Streamlit app** to help you identify the people on Instagram who don't follow you back! This project is designed to help you manage your Instagram following list, clearing out the accounts that don’t reciprocate your follow and letting you focus on people who genuinely care about your content. 💖
+A simple **Streamlit app** to help you identify the people on platforms who don't follow you back! This project is designed to help you manage your  following list, clearing out the accounts that don’t reciprocate your follow and letting you focus on people who genuinely care about your content. 💖
+
+For now the app only supports Instagram and GitHub, but I plan to add more social media platforms in the future. Stay tuned! 🚀
 
 <br/>
-
 
 ## 🚀 Features
-- **Upload Instagram data**: Upload the ZIP file you downloaded from Instagram's Account Center.
-- **Unfollowers list**: The app identifies and displays the accounts you follow but who don't follow you back.
-- **Interactive and user-friendly**: See your results with a clean and intuitive interface.
 - **Privacy first**: All processing happens locally—your data is safe!
+- **Interactive and user-friendly**: See your results with a clean and intuitive interface.
 
 <br/>
 
-## 🛠 How It Works
+## 🛠 How It Works for Instagram
 1. **Download your Instagram data**:
    - Log in to your Instagram account.
    - Go to **Meta Account Center > Privacy > Download Your Information**.
@@ -34,12 +33,11 @@ A simple **Streamlit app** to help you identify the people on Instagram who don'
 <br/>
 
 ## 📋 Requirements
-To run this project, you need:
+To run this project by yourself, you need:
 - Python 3.7+
-- Streamlit
-- BeautifulSoup4
 
 Install the dependencies with:
+
 ```bash
 pip install -r requirements.txt
 ```
