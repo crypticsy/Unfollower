@@ -98,7 +98,7 @@ with instagram_tab:
     st.markdown("<br/>", unsafe_allow_html=True)
 
     # File uploader
-    uploaded_file = st.file_uploader("Upload your zip file here", type=["zip"])
+    uploaded_file = st.file_uploader("Upload your zip file from Meta here", type=["zip"])
 
     if uploaded_file:
         with st.spinner("Processing the uploaded ZIP file..."):
