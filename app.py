@@ -33,7 +33,7 @@ divider_color = "red"
 
 # Custom logos for the tabs
 instagram_logo = "![Instagram Logo](https://cdn-icons-png.flaticon.com/512/1384/1384063.png)"
-github_logo = "![GitHub Logo](https://cdn.worldvectorlogo.com/logos/github-icon-2.svg)"
+github_logo = "![GitHub Logo](https://www.svgrepo.com/show/475654/github-color.svg)"
 
 st.subheader("Unfollower", divider = divider_color)
 st.markdown("""
