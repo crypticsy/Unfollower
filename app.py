@@ -4,6 +4,9 @@ import json
 import zipfile
 import requests
 import streamlit as st
+import pandas as pd
+from datetime import datetime
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
 from bs4 import BeautifulSoup as bs
 
@@ -129,17 +132,75 @@ with instagram_tab:
 
         if instagram_followers and instagram_following and save_type == "HTML":
             st.success("Data successfully extracted!")
-            
-            instagram_followers_list = [follower.text for follower in instagram_followers.find_all("a", {"target": "_blank"})] 
-            instagram_following_list = [followin.text for followin in instagram_following.find_all("a", {"target": "_blank"})]
-            unfollowers_instagram = [following for following in instagram_following_list if following not in instagram_followers_list]
+
+            # Extract followers with dates
+            followers_data = {}
+            for entry in instagram_followers.find_all("div", {"class": "pam _3-95 _2ph- _a6-g uiBoxWhite noborder"}):
+                link = entry.find("a", {"target": "_blank"})
+                divs = entry.find_all("div")
+                if link and len(divs) >= 4:
+                    username = link.text.strip()
+                    date_text = divs[3].text.strip() if divs[3].text.strip() else "N/A"
+                    followers_data[username] = date_text
+
+            # Extract following with dates
+            following_data = {}
+            for entry in instagram_following.find_all("div", {"class": "pam _3-95 _2ph- _a6-g uiBoxWhite noborder"}):
+                h2 = entry.find("h2", {"class": "_3-95 _2pim _a6-h _a6-i"})
+                divs = entry.find_all("div")
+                if h2 and len(divs) >= 4:
+                    username = h2.text.strip()
+                    date_text = divs[3].text.strip() if divs[3].text.strip() else "N/A"
+                    following_data[username] = date_text
+
+            instagram_followers_list = list(followers_data.keys())
+            instagram_following_list = list(following_data.keys())
+
+            # Create detailed unfollowers list with dates
+            unfollowers_instagram_detailed = []
+            for username in instagram_following_list:
+                if username not in instagram_followers_list:
+                    unfollowers_instagram_detailed.append({
+                        'username': username,
+                        'you_followed': following_data.get(username, 'N/A'),
+                        'they_followed': 'Never'
+                    })
+
+            unfollowers_instagram = [u['username'] for u in unfollowers_instagram_detailed]
         
         elif instagram_followers and instagram_following and save_type == "JSON":
             st.success("Data successfully extracted!")
-            
-            instagram_followers_list = [follower["string_list_data"][0]["value"] for follower in instagram_followers]
-            instagram_following_list = [followin["string_list_data"][0]["value"] for followin in instagram_following["relationships_following"]]
-            unfollowers_instagram = [following for following in instagram_following_list if following not in instagram_followers_list]
+
+            # Extract followers with timestamps
+            followers_data = {}
+            for follower in instagram_followers:
+                username = follower["string_list_data"][0]["value"]
+                timestamp = follower["string_list_data"][0].get("timestamp", 0)
+                date_text = datetime.fromtimestamp(timestamp).strftime("%b %d, %Y %I:%M %p") if timestamp else "N/A"
+                followers_data[username] = date_text
+
+            # Extract following with timestamps
+            following_data = {}
+            for followin in instagram_following["relationships_following"]:
+                username = followin["string_list_data"][0]["value"]
+                timestamp = followin["string_list_data"][0].get("timestamp", 0)
+                date_text = datetime.fromtimestamp(timestamp).strftime("%b %d, %Y %I:%M %p") if timestamp else "N/A"
+                following_data[username] = date_text
+
+            instagram_followers_list = list(followers_data.keys())
+            instagram_following_list = list(following_data.keys())
+
+            # Create detailed unfollowers list with dates
+            unfollowers_instagram_detailed = []
+            for username in instagram_following_list:
+                if username not in instagram_followers_list:
+                    unfollowers_instagram_detailed.append({
+                        'username': username,
+                        'you_followed': following_data.get(username, 'N/A'),
+                        'they_followed': 'Never'
+                    })
+
+            unfollowers_instagram = [u['username'] for u in unfollowers_instagram_detailed]
         
         else:
             st.error("Please ensure you have uploaded the correct ZIP file and selected the correct data format.")
@@ -147,20 +208,70 @@ with instagram_tab:
         if unfollowers_instagram:
             st.markdown("<br/><br/>", unsafe_allow_html=True)
             st.subheader("Users that you follow but don't follow you back", divider=divider_color)
-        
+
             col1, col2, col3 = st.columns(3)
             col1.metric("Users that meet the criteria", len(unfollowers_instagram))
-            col2.metric("Total Followers", len(instagram_followers_list))   
-            col3.metric("TotalF ollowing", len(instagram_following_list))
-            
-            search_term = st.text_input("Search for a specific user", "", key="search_instagram")
-            st.markdown("<br/>", unsafe_allow_html=True)
+            col2.metric("Total Followers", len(instagram_followers_list))
+            col3.metric("Total Following", len(instagram_following_list))
 
-            instagram_filtered_search = unfollowers_instagram
-            if search_term: instagram_filtered_search = [user for user in unfollowers_instagram if search_term.lower() in user.lower()]
-                
-            for unfollower_insta in instagram_filtered_search:
-                st.markdown(f"🗑️  &nbsp; [{unfollower_insta}](https://www.instagram.com/{unfollower_insta})")
+            # Create DataFrame with detailed information
+            df_data = []
+            for idx, unfollower in enumerate(unfollowers_instagram_detailed, 1):
+                df_data.append({
+                    "No.": idx,
+                    "Username": unfollower['username'],
+                    "You Followed On": unfollower['you_followed'],
+                    "Status": "Not Following Back"
+                })
+
+            df = pd.DataFrame(df_data)
+
+            # Configure AG Grid
+            gb = GridOptionsBuilder.from_dataframe(df)
+
+            # Configure columns
+            gb.configure_column("No.", width=60, pinned='left')
+
+            # Make Username column clickable as a link using proper cell renderer
+            username_renderer = JsCode("""
+                class UsernameRenderer {
+                    init(params) {
+                        this.eGui = document.createElement('a');
+                        this.eGui.href = 'https://www.instagram.com/' + params.value;
+                        this.eGui.target = '_blank';
+                        this.eGui.style.color = '#1a73e8';
+                        this.eGui.style.textDecoration = 'none';
+                        this.eGui.style.fontWeight = '500';
+                        this.eGui.innerText = params.value;
+                    }
+                    getGui() {
+                        return this.eGui;
+                    }
+                }
+            """)
+            gb.configure_column("Username", cellRenderer=username_renderer, width=200, pinned='left')
+
+            gb.configure_column("You Followed On", width=180, header_name="You Followed On")
+            gb.configure_column("Status", width=160)
+
+            # Enable features
+            gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=25)
+            gb.configure_default_column(filterable=True, sortable=True, resizable=True)
+            gb.configure_grid_options(domLayout='normal', suppressHtmlRendering=False)
+
+            gridOptions = gb.build()
+
+            # Display AG Grid
+            st.markdown("<br/>", unsafe_allow_html=True)
+            AgGrid(
+                df,
+                gridOptions=gridOptions,
+                update_mode=GridUpdateMode.NO_UPDATE,
+                allow_unsafe_jscode=True,
+                theme='streamlit',
+                height=600,
+                fit_columns_on_grid_load=False
+            )
         
         elif instagram_followers and instagram_following and not unfollowers_instagram:
             st.info("You follow everyone back! 🎉", icon="🎉")
@@ -194,20 +305,68 @@ with github_tab:
                 if unfollowers_github:
                     st.markdown("<br/><br/>", unsafe_allow_html=True)
                     st.subheader("Users that you follow but don't follow you back", divider=divider_color)
-                    
+
                     col1, col2, col3 = st.columns(3)
                     col1.metric("Users that meet the criteria", len(unfollowers_github))
                     col2.metric("Total Followers", len(github_followers))
                     col3.metric("Total Following", len(github_following))
-                    
-                    search_github = st.text_input("Search for a specific user", "", key="search_github")
+
+                    # Create DataFrame with detailed information
+                    df_data_github = []
+                    for idx, username in enumerate(unfollowers_github, 1):
+                        df_data_github.append({
+                            "No.": idx,
+                            "Username": username,
+                            "Status": "Not Following Back"
+                        })
+
+                    df_github = pd.DataFrame(df_data_github)
+
+                    # Configure AG Grid
+                    gb_github = GridOptionsBuilder.from_dataframe(df_github)
+
+                    # Configure columns
+                    gb_github.configure_column("No.", width=60, pinned='left')
+
+                    # Make Username column clickable as a link using proper cell renderer
+                    username_renderer_github = JsCode("""
+                        class UsernameRenderer {
+                            init(params) {
+                                this.eGui = document.createElement('a');
+                                this.eGui.href = 'https://www.github.com/' + params.value;
+                                this.eGui.target = '_blank';
+                                this.eGui.style.color = '#1a73e8';
+                                this.eGui.style.textDecoration = 'none';
+                                this.eGui.style.fontWeight = '500';
+                                this.eGui.innerText = params.value;
+                            }
+                            getGui() {
+                                return this.eGui;
+                            }
+                        }
+                    """)
+                    gb_github.configure_column("Username", cellRenderer=username_renderer_github, width=250, pinned='left')
+
+                    gb_github.configure_column("Status", width=180)
+
+                    # Enable features
+                    gb_github.configure_pagination(paginationAutoPageSize=False, paginationPageSize=25)
+                    gb_github.configure_default_column(filterable=True, sortable=True, resizable=True)
+                    gb_github.configure_grid_options(domLayout='normal', suppressHtmlRendering=False)
+
+                    gridOptions_github = gb_github.build()
+
+                    # Display AG Grid
                     st.markdown("<br/>", unsafe_allow_html=True)
-                    
-                    filtered_github_search = unfollowers_github
-                    if search_github: filtered_github_search = [user for user in unfollowers_github if search_github.lower() in user.lower()]
-                    
-                    for unfollower_github in filtered_github_search:
-                        st.markdown(f"🗑️  &nbsp; [{unfollower_github}](https://www.github.com/{unfollower_github})")
+                    AgGrid(
+                        df_github,
+                        gridOptions=gridOptions_github,
+                        update_mode=GridUpdateMode.NO_UPDATE,
+                        allow_unsafe_jscode=True,
+                        theme='streamlit',
+                        height=600,
+                        fit_columns_on_grid_load=False
+                    )
 
                 else:
                     st.info("You follow everyone back! 🎉", icon="🎉")
