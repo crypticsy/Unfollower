@@ -84,21 +84,27 @@ with instagram_tab:
             # Open the ZIP file
             with zipfile.ZipFile(uploaded_file, "r") as zip_ref:
                 for file_name in zip_ref.namelist():
+                    file_basename = file_name.split("/")[-1]
+
                     if save_type == "HTML" and file_name.endswith(".html"):
-                        if "followers_1.html" in file_name.split("/")[-1]:
+                        # Handle both followers.html and followers_1.html
+                        if file_basename.startswith("followers") and file_basename.endswith(".html"):
                             with zip_ref.open(file_name) as file:
                                 instagram_followers = bs(file.read(), "html.parser")
 
-                        elif "following.html" in file_name.split("/")[-1]:
+                        # Handle both following.html and following_1.html
+                        elif file_basename.startswith("following") and file_basename.endswith(".html"):
                             with zip_ref.open(file_name) as file:
                                 instagram_following = bs(file.read(), "html.parser")
 
                     elif save_type == "JSON" and file_name.endswith(".json"):
-                        if "followers_1.json" in file_name.split("/")[-1]:
+                        # Handle both followers.json and followers_1.json
+                        if file_basename.startswith("followers") and file_basename.endswith(".json"):
                             with zip_ref.open(file_name) as file:
                                 instagram_followers = json.load(file)
 
-                        elif "following.json" in file_name.split("/")[-1]:
+                        # Handle both following.json and following_1.json
+                        elif file_basename.startswith("following") and file_basename.endswith(".json"):
                             with zip_ref.open(file_name) as file:
                                 instagram_following = json.load(file)
 
@@ -121,32 +127,33 @@ with instagram_tab:
             st.error("❌ Please ensure you uploaded the correct ZIP file and selected the correct data format.")
 
         # Display results
-        if unfollowers_instagram_detailed:
+        if instagram_followers and instagram_following:
             instagram_followers_list = list(followers_data.keys()) if 'followers_data' in locals() else []
             instagram_following_list = list(following_data.keys()) if 'following_data' in locals() else []
 
-            # Render metrics
+            # Always render metrics
             render_metrics(
                 len(unfollowers_instagram_detailed),
                 len(instagram_followers_list),
                 len(instagram_following_list)
             )
 
-            # Render section header
-            render_section_header("Users Not Following You Back", "👥")
+            # Show table or success message
+            if unfollowers_instagram_detailed:
+                # Render section header
+                render_section_header("Users Not Following You Back", "👥")
 
-            # Render custom table
-            render_custom_table(unfollowers_instagram_detailed, table_type="instagram")
-
-        elif instagram_followers and instagram_following and not unfollowers_instagram_detailed:
-            st.success("🎉 Amazing! Everyone you follow follows you back!")
+                # Render custom table
+                render_custom_table(unfollowers_instagram_detailed, table_type="instagram")
+            else:
+                st.success("🎉 Amazing! Everyone you follow follows you back!")
 
 
 # ----------------------------------------------- GitHub Tab -----------------------------------------------
 
 with github_tab:
     st.markdown("### 🔍 Enter GitHub Username")
-    github_username = st.text_input("", placeholder="Enter username...", key="github_username", label_visibility="collapsed")
+    github_username = st.text_input("GitHub Username", placeholder="Enter username...", key="github_username", label_visibility="collapsed")
 
     if github_username:
         with st.spinner("🔄 Fetching GitHub data..."):
@@ -157,19 +164,19 @@ with github_tab:
             else:
                 unfollowers_github = get_github_unfollowers(github_followers, github_following)
 
-                if unfollowers_github:
-                    # Render metrics
-                    render_metrics(
-                        len(unfollowers_github),
-                        len(github_followers),
-                        len(github_following)
-                    )
+                # Always render metrics
+                render_metrics(
+                    len(unfollowers_github),
+                    len(github_followers),
+                    len(github_following)
+                )
 
+                # Show table or success message
+                if unfollowers_github:
                     # Render section header
                     render_section_header("Users Not Following You Back", "👥")
 
                     # Render custom table
                     render_custom_table(unfollowers_github, table_type="github")
-
                 else:
                     st.success("🎉 Amazing! Everyone you follow follows you back!")

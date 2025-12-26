@@ -59,10 +59,15 @@ def parse_json_followers(instagram_followers) -> Dict[str, str]:
     """
     followers_data = {}
     for follower in instagram_followers:
-        username = follower["string_list_data"][0]["value"]
-        timestamp = follower["string_list_data"][0].get("timestamp", 0)
-        date_text = datetime.fromtimestamp(timestamp).strftime("%b %d, %Y %I:%M %p") if timestamp else "N/A"
-        followers_data[username] = date_text
+        try:
+            if "string_list_data" in follower and len(follower["string_list_data"]) > 0:
+                username = follower["string_list_data"][0].get("value")
+                if username:
+                    timestamp = follower["string_list_data"][0].get("timestamp", 0)
+                    date_text = datetime.fromtimestamp(timestamp).strftime("%b %d, %Y %I:%M %p") if timestamp else "N/A"
+                    followers_data[username] = date_text
+        except (KeyError, IndexError, TypeError):
+            continue
     return followers_data
 
 
@@ -77,11 +82,26 @@ def parse_json_following(instagram_following) -> Dict[str, str]:
         Dictionary mapping username to follow date
     """
     following_data = {}
-    for followin in instagram_following["relationships_following"]:
-        username = followin["string_list_data"][0]["value"]
-        timestamp = followin["string_list_data"][0].get("timestamp", 0)
-        date_text = datetime.fromtimestamp(timestamp).strftime("%b %d, %Y %I:%M %p") if timestamp else "N/A"
-        following_data[username] = date_text
+
+    # Handle different JSON structures
+    following_list = []
+    if isinstance(instagram_following, dict):
+        following_list = instagram_following.get("relationships_following", [])
+    elif isinstance(instagram_following, list):
+        following_list = instagram_following
+
+    for followin in following_list:
+        try:
+            # Username is in the "title" field for following
+            username = followin.get("title", "")
+
+            if username and "string_list_data" in followin and len(followin["string_list_data"]) > 0:
+                timestamp = followin["string_list_data"][0].get("timestamp", 0)
+                date_text = datetime.fromtimestamp(timestamp).strftime("%b %d, %Y %I:%M %p") if timestamp else "N/A"
+                following_data[username] = date_text
+        except (KeyError, IndexError, TypeError):
+            continue
+
     return following_data
 
 
